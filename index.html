@@ -1,70 +1,93 @@
 <!DOCTYPE html>
-<html lang="sv">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>PvP Filter Gen v17</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PvP Filter Generator v21</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; margin: 20px; background: #121212; color: #eee; }
-        .container { max-width: 900px; margin: auto; background: #1e1e1e; padding: 25px; border-radius: 12px; border: 1px solid #333; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background: #121212; color: #eee; }
+        .container { max-width: 900px; margin: auto; background: #1e1e1e; padding: 25px; border-radius: 12px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         input, select { width: 100%; padding: 12px; margin: 10px 0; background: #2d2d2d; border: 1px solid #444; color: white; border-radius: 6px; box-sizing: border-box; }
         .flex { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
         .options-row { background: #252525; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #333; }
-        button { flex: 1; padding: 15px; cursor: pointer; border-radius: 6px; font-weight: bold; border: none; }
+        button { flex: 1; padding: 15px; cursor: pointer; border-radius: 6px; font-weight: bold; border: none; transition: 0.2s; }
         .btn-add { background: #2980b9; color: white; }
+        .btn-add:hover { background: #3498db; }
         .btn-download { background: #27ae60; color: white; margin-top: 10px; }
+        .btn-download:hover { background: #2ecc71; }
         .btn-clear { background: #c0392b; color: white; max-width: 150px; margin-top: 10px; }
-        pre { background: #000; color: #00ff00; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 11px; max-height: 250px; }
+        pre { background: #000; color: #00ff00; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 11px; max-height: 250px; border: 1px solid #333; }
         .queue-box { background: #111; padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px dashed #444; }
         .queue-item { display: inline-block; background: #333; padding: 5px 10px; margin: 5px; border-radius: 4px; font-size: 13px; border-left: 3px solid #27ae60; }
         label { font-size: 14px; cursor: pointer; user-select: none; color: #bbb; }
-        .highlight { color: #27ae60; font-weight: bold; }
+        #status { text-align:center; font-weight: bold; margin-bottom:15px; }
+        .guide { margin-top: 30px; font-size: 13px; line-height: 1.6; border-top: 1px solid #444; padding-top: 20px; }
+        .guide h3 { color: #27ae60; margin-top: 0; }
+        ul, ol { padding-left: 20px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>PvP Filter Generator v17</h2>
-    <div id="status" style="text-align:center; color: #27ae60; margin-bottom:10px;">Laddar Game Master...</div>
+    <h2 style="text-align: center; color: #27ae60;">PvP Filter Generator v21</h2>
+    <div id="status">Loading Game Data...</div>
     
-    <input type="text" id="pkmInput" placeholder="Sök Pokémon (t.ex. Venusaur)..." list="pkmList">
+    <input type="text" id="pkmInput" placeholder="Search Pokemon (e.g. Venusaur, Cottonee)..." list="pkmList">
     <datalist id="pkmList"></datalist>
 
     <div class="options-row">
         <div class="flex">
             <select id="league">
-                <option value="1500">Great League (1500)</option>
-                <option value="2500">Ultra League (2500)</option>
+                <option value="500">Little League (LL) - 500 CP</option>
+                <option value="1500" selected>Great League (GL) - 1500 CP</option>
+                <option value="2500">Ultra League (UL) - 2500 CP</option>
             </select>
             <select id="rankCount">
-                <option value="1">Rank 1</option>
-                <option value="5" selected>Rank 1-5</option>
-                <option value="10">Rank 1-10</option>
+                <option value="1">Rank 1 Only</option>
+                <option value="5" selected>Top 5 Ranks</option>
+                <option value="10">Top 10 Ranks</option>
             </select>
         </div>
         
         <div class="flex" style="justify-content: space-around; background: #1a1a1a; padding: 10px; border-radius: 6px;">
-            <label title="Om avbockad fångas endast bas-formen (t.ex. Bulbasaur)">
-                <input type="checkbox" id="addEvolutions"> Inkludera även utvecklingar (familjen)
+            <label title="Include Ivysaur/Venusaur if searching for Bulbasaur">
+                <input type="checkbox" id="addEvolutions"> Include Evolutions
             </label>
             <label>
-                <input type="checkbox" id="isShiny" checked> Only Shiny
+                <input type="checkbox" id="isShiny"> Only Shiny
             </label>
         </div>
         
-        <button class="btn-add" id="addBtn" onclick="addToQueue()" disabled>+ Lägg till filter</button>
+        <button class="btn-add" id="addBtn" onclick="addToQueue()" disabled>+ Add to List</button>
     </div>
 
     <div class="queue-box">
-        <strong>Filter i kön:</strong>
-        <div id="queueList"><i>Inga tillagda...</i></div>
+        <strong>Filter Queue:</strong>
+        <div id="queueList"><i>No filters added yet...</i></div>
     </div>
 
     <div class="flex">
-        <button class="btn-download" id="dlBtn" onclick="downloadJson()" disabled>Generera & Spara .json</button>
-        <button class="btn-clear" onclick="clearQueue()">Rensa kö</button>
+        <button class="btn-download" id="dlBtn" onclick="downloadJson()" disabled>Generate & Download .json</button>
+        <button class="btn-clear" onclick="clearQueue()">Clear Queue</button>
     </div>
 
-    <pre id="output">// JSON preview visas här...</pre>
+    <pre id="output">// JSON preview will appear here...</pre>
+
+    <div class="guide">
+        <h3>📖 How to Use</h3>
+        <ol>
+            <li><strong>Search:</strong> Type a Pokémon name. It will automatically target the base form (e.g., searching <em>Walrein</em> targets <em>Spheal</em>).</li>
+            <li><strong>League:</strong> Choose your target CP limit (LL, GL, or UL).</li>
+            <li><strong>Options:</strong> 
+                <ul>
+                    <li><strong>Include Evolutions:</strong> Adds the whole family to the filter.</li>
+                    <li><strong>Only Shiny:</strong> If checked, the bot will only catch the shiny version.</li>
+                </ul>
+            </li>
+            <li><strong>Download:</strong> Add as many Pokémon as you want, then hit the green download button.</li>
+            <li><strong>Polygon#:</strong> Import the file in your app's Encounter Filters section.</li>
+        </ol>
+    </div>
 </div>
 
 <script>
@@ -83,22 +106,29 @@ async function init() {
             opt.value = p.speciesName;
             list.appendChild(opt);
         });
-        document.getElementById('status').innerText = "DATA LADDA ✔️";
+        document.getElementById('status').innerText = "SYSTEM READY ✔️";
+        document.getElementById('status').style.color = "#27ae60";
         document.getElementById('addBtn').disabled = false;
-    } catch (e) { document.getElementById('status').innerText = "FEL!"; }
+    } catch (e) { 
+        document.getElementById('status').innerText = "ERROR LOADING DATA!"; 
+        document.getElementById('status').style.color = "#c0392b";
+    }
 }
 
 function addToQueue() {
     const inputName = document.getElementById('pkmInput').value.trim();
-    const league = parseInt(document.getElementById('league').value);
+    const leagueVal = parseInt(document.getElementById('league').value);
     const count = parseInt(document.getElementById('rankCount').value);
     const includeEvolutions = document.getElementById('addEvolutions').checked;
     const isShiny = document.getElementById('isShiny').checked;
     
     const targetPkm = pokemonData.find(x => x.speciesName.toLowerCase() === inputName.toLowerCase());
-    if (!targetPkm) return alert("Hittade inte Pokémon!");
+    if (!targetPkm) return alert("Pokemon not found!");
 
-    // Logik för att hitta bas-formen
+    let leagueCode = "GL";
+    if (leagueVal === 500) leagueCode = "LL";
+    if (leagueVal === 2500) leagueCode = "UL";
+    
     let ids = [493];
     let familyMembers = [];
     if (targetPkm.family && targetPkm.family.id) {
@@ -107,20 +137,14 @@ function addToQueue() {
     }
 
     if (familyMembers.length > 0) {
-        // Lägg alltid till den första (bas-formen, t.ex. Bulbasaur)
-        ids.push(familyMembers[0].dex);
-        
-        // Om användaren vill ha med resten (Ivysaur/Venusaur)
+        ids.push(familyMembers[0].dex); 
         if (includeEvolutions) {
-            familyMembers.forEach(m => {
-                if(!ids.includes(m.dex)) ids.push(m.dex);
-            });
+            familyMembers.forEach(m => { if(!ids.includes(m.dex)) ids.push(m.dex); });
         }
     } else {
         ids.push(targetPkm.dex);
     }
 
-    // PvP Beräkning (Matematik från v14/v16)
     const bAtk = targetPkm.baseStats.atk, bDef = targetPkm.baseStats.def, bSta = targetPkm.baseStats.sta || targetPkm.baseStats.hp;
     let combinations = [];
     for (let a = 0; a <= 15; a++) {
@@ -129,7 +153,7 @@ function addToQueue() {
                 let bestLvl = 1;
                 for (let l = 1; l <= 50; l += 0.5) {
                     let cp = Math.floor((bAtk+a) * Math.sqrt(bDef+d) * Math.sqrt(bSta+s) * Math.pow(CPM[l],2) / 10);
-                    if (cp > league) break;
+                    if (cp > leagueVal) break;
                     bestLvl = l;
                 }
                 let cpm = CPM[bestLvl];
@@ -143,7 +167,7 @@ function addToQueue() {
 
     queue.push({
         name: targetPkm.speciesName,
-        league: league,
+        league: leagueCode,
         ids: ids,
         ivs: top,
         isShiny: isShiny,
@@ -158,7 +182,7 @@ function addToQueue() {
 function updateQueueUI() {
     const container = document.getElementById('queueList');
     if (queue.length === 0) {
-        container.innerHTML = "<i>Inga tillagda...</i>";
+        container.innerHTML = "<i>No filters added...</i>";
         return;
     }
     container.innerHTML = queue.map((item, index) => `
@@ -176,18 +200,21 @@ function clearQueue() {
     queue = [];
     updateQueueUI();
     document.getElementById('dlBtn').disabled = true;
+    document.getElementById('output').textContent = "// Queue cleared";
 }
 
 function downloadJson() {
     let finalFilters = {};
     queue.forEach(item => {
         const id = crypto.randomUUID();
+        const rankName = (item.ivs.length === 1) ? "Rank 1" : `Rank 1-${item.ivs.length}`;
+        
         finalFilters[id] = {
             "enabled": true,
             "encounterFilterId": id,
-            "encounterFilterName": `${item.name.toUpperCase()} Rank 1-${item.ivs.length} (${item.league})`,
+            "encounterFilterName": `${item.name.toUpperCase()} ${rankName} (${item.league})`,
             "filterLevel": true,
-            "filterOnlyCatch": true,
+            "filterOnlyCatch": item.isShiny,
             "filterPokemonId": true,
             "filterSpecificIv": true,
             "ivSets": item.ivs.map(iv => ({ "ivAtk": iv.a, "ivDef": iv.d, "ivSta": iv.s })),
