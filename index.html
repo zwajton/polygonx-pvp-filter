@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PvP Filter Generator v27</title>
+    <title>PvP Filter Generator v30</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background: #121212; color: #eee; }
         .container { max-width: 950px; margin: auto; background: #1e1e1e; padding: 25px; border-radius: 12px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -114,6 +114,7 @@ function getBaseIds(targetPkm) {
     return ids;
 }
 
+// Ensure your calculateAllSpreads includes the level property:
 function calculateAllSpreads(pkm, limit) {
     let spreads = [];
     const bAtk = pkm.baseStats.atk, bDef = pkm.baseStats.def, bSta = pkm.baseStats.sta || pkm.baseStats.hp;
@@ -129,7 +130,7 @@ function calculateAllSpreads(pkm, limit) {
                 let cpm = CPM[bestLvl];
                 let realAtk = (bAtk + a) * cpm;
                 let prod = realAtk * ((bDef + d) * cpm) * Math.floor((bSta + s) * cpm);
-                spreads.push({ a, d, s, prod, realAtk });
+                spreads.push({ a, d, s, prod, realAtk, level: bestLvl }); // Added level here
             }
         }
     }
@@ -144,17 +145,18 @@ function addRanks(count) {
     const ids = getBaseIds(pkm);
     const shiny = document.getElementById('isShiny').checked;
     
-    // Get info for the Rank 1 specifically for the display
     const rank1 = all[0];
-    const ivDisplay = count === 1 ? `${rank1.a}/${rank1.d}/${rank1.s}` : `Top ${count} Ranks`;
-    const label = count === 1 ? "RANK 1" : `RANK 1-${count}`;
+    // FIXED: Now correctly displays Rank 1 IVs in the UI list
+    const ivDisplay = count === 1 ? `${rank1.a}/${rank1.d}/${rank1.s}` : `Rank 1-${count} Set`;
+    const label = count === 1 ? "Rank 1" : `Rank 1-${count}`;
+    const code = (league === 500) ? "LL" : (league === 1500) ? "GL" : "UL";
 
     queue.push({ 
         name: pkm.speciesName, 
         label: label, 
         ivText: ivDisplay, 
         atk: rank1.realAtk.toFixed(1), 
-        league: (league==1500?"GL":league==2500?"UL":"LL"), 
+        league: code, 
         ids: ids, 
         ivs: all.slice(0, count), 
         shiny: shiny, 
@@ -206,20 +208,54 @@ function downloadJson() {
     let filters = {};
     queue.forEach(item => {
         const id = crypto.randomUUID();
+        
+        // Use the level of the first IV set in the list for levelMax
+        // (For Rank 1-X, it uses the Rank 1 level)
+        const maxLvl = item.ivs[0].level;
+
         filters[id] = {
+            "catchOptionsBerries": [],
+            "catchOptionsPokeballs": [],
+            "cpMax": 0,
+            "cpMin": 0,
             "enabled": true,
             "encounterFilterId": id,
-            "encounterFilterName": `${item.name.toUpperCase()} ${item.label}`,
-            "filterPokemonId": true,
-            "filterSpecificIv": true,
-            "ivSets": item.ivs.map(iv => ({ "ivAtk": iv.a, "ivDef": iv.d, "ivSta": iv.s })),
-            "onlyShiny": item.shiny,
+            // UPDATED: Now includes League code in Name: "LAPRAS Rank 1 (GL)"
+            "encounterFilterName": `${item.name.toUpperCase()} ${item.label} (${item.league})`,
+            "filterCp": false,
+            "filterGreatLeagueTopRank": false,
+            "filterIvSum": false,
+            "filterLevel": true,
             "filterOnlyCatch": item.shiny,
-            "pokemonId": item.ids.map(dexId => ({ "pokedexId": dexId, "costume": 0, "form": 0, "gender": 0 }))
+            "filterPokemonId": true,
+            "filterShowcaseScore": false,
+            "filterSize": false,
+            "filterSpecificIv": true,
+            "filterType": false,
+            "filterUltraLeagueTopRank": false,
+            "ivSets": item.ivs.map(iv => ({ "ivAtk": iv.a, "ivDef": iv.d, "ivSta": iv.s })),
+            "ivSumMax": 0,
+            "ivSumMin": 0,
+            "levelMax": Math.ceil(maxLvl), 
+            "levelMin": 1,
+            "minShowcaseScore": 0,
+            "onlyApplyPurificationBonus": false,
+            "onlyBackground": false,
+            "onlyShiny": item.shiny,
+            "pokemonDetailsCatchOriginDmax": false,
+            "pokemonId": item.ids.map(dexId => ({ "costume": 0, "form": 0, "gender": 0, "pokedexId": dexId })),
+            "removePokemonIdFromListThreshold": 1,
+            // UPDATED: Enabled per your request
+            "removePokemonIdFromListWhenCaught": true,
+            "sizeXl": false,
+            "sizeXs": false,
+            "sizeXxl": false,
+            "sizeXxs": false,
+            "targetTypes": []
         };
     });
     const blob = new Blob([JSON.stringify({ "encounterFilters": filters }, null, 2)], { type: "application/json" });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `PvP_Filters.json`; a.click();
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `PolygonX_PvP_Filters.json`; a.click();
 }
 init();
 </script>
