@@ -141,8 +141,25 @@ function addRanks(count) {
     if (!pkm) return alert("Select Pokemon!");
     const league = parseInt(document.getElementById('league').value);
     const all = calculateAllSpreads(pkm, league);
-    const label = count === 1 ? "Rank 1" : `Rank 1-${count}`;
-    queue.push({ name: pkm.speciesName, label, atk: all[0].realAtk.toFixed(1), ivText: "High Stat Product", league: (league==1500?"GL":league==2500?"UL":"LL"), ids: getBaseIds(pkm), ivs: all.slice(0, count), shiny: document.getElementById('isShiny').checked, class: "" });
+    const ids = getBaseIds(pkm);
+    const shiny = document.getElementById('isShiny').checked;
+    
+    // Get info for the Rank 1 specifically for the display
+    const rank1 = all[0];
+    const ivDisplay = count === 1 ? `${rank1.a}/${rank1.d}/${rank1.s}` : `Top ${count} Ranks`;
+    const label = count === 1 ? "RANK 1" : `RANK 1-${count}`;
+
+    queue.push({ 
+        name: pkm.speciesName, 
+        label: label, 
+        ivText: ivDisplay, 
+        atk: rank1.realAtk.toFixed(1), 
+        league: (league==1500?"GL":league==2500?"UL":"LL"), 
+        ids: ids, 
+        ivs: all.slice(0, count), 
+        shiny: shiny, 
+        class: "" 
+    });
     updateUI();
 }
 
