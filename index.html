@@ -46,9 +46,19 @@
     </div>
     
     <div id="status" style="text-align:center; font-weight:bold; margin-bottom:15px; color:#aaa;">Connecting to GameData...</div>
-    
+
     <input type="text" id="pkmInput" placeholder="Search Pokemon (e.g. Scizor, Feraligatr)..." list="pkmList">
     <datalist id="pkmList"></datalist>
+
+<div class="options-row" style="background: #252525; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-bottom: 10px; box-sizing: border-box;">
+    <label style="color: #3498db; font-weight: bold; font-size: 0.9em;">BULK ADD (PASTE LIST):</label>
+    <textarea id="bulkInput" placeholder="Lapras, Steelix, Dondozo..." 
+    style="width: 100%; max-width: 100%; box-sizing: border-box; height: 50px; background: #1a1a1a; color: white; border-radius: 6px; padding: 10px; border: 1px solid #444; margin-top: 5px; resize: none;"></textarea>
+    <button class="btn-blue" onclick="processBulk()" 
+        style="margin-top: 10px; width: 100%; box-sizing: border-box; font-weight: bold;">
+        ⚡ ADD ALL FROM LIST (RANK 1)
+    </button>
+</div>
 
     <div class="options-row">
         <select id="league">
@@ -57,9 +67,12 @@
             <option value="2500">Ultra League (UL)</option>
         </select>
         
-        <div class="flex" style="justify-content: space-around; background: #1a1a1a; padding: 10px; border-radius: 6px; margin-bottom:10px;">
+        <div class="options-row" style="display: flex; gap: 15px; flex-wrap: wrap; background: #252525; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-bottom: 10px;">
+            <label><input type="checkbox" id="isShiny"> Shiny Only</label>
             <label><input type="checkbox" id="addEvolutions"> Include Family</label>
-            <label><input type="checkbox" id="isShiny"> Only Shiny ✨</label>
+            <label title="Auto-assign Ultra Ball + Golden Razz">
+                <input type="checkbox" id="prefItems" checked> Auto-Item (Ultra/Gold)
+            </label>
         </div>
 
         <div class="flex">
@@ -102,6 +115,48 @@ async function init() {
         document.getElementById('status').innerText = "SYSTEM ARMED ✔️";
         document.getElementById('specialBtn').disabled = false;
     } catch (e) { document.getElementById('status').innerText = "CONNECTION ERROR!"; }
+}
+
+// Helper to get selected berries/balls
+function getSelectedItems(className) {
+    return Array.from(document.querySelectorAll('.' + className + ':checked')).map(cb => parseInt(cb.value));
+}
+
+// BULK PROCESSING FUNCTION
+function processBulk() {
+    const input = document.getElementById('bulkInput').value;
+    if (!input.trim()) return alert("Please paste some names first!");
+    
+    const names = input.split(',').map(n => n.trim());
+    let addedCount = 0;
+    const league = parseInt(document.getElementById('league').value);
+    const code = (league === 500) ? "LL" : (league === 1500) ? "GL" : "UL";
+    const shiny = document.getElementById('isShiny').checked;
+
+    names.forEach(name => {
+        const pkm = pokemonData.find(x => x.speciesName.toLowerCase() === name.toLowerCase());
+        if (pkm) {
+            const all = calculateAllSpreads(pkm, league);
+            const ids = getBaseIds(pkm); // Your existing getBaseIds
+            
+            queue.push({ 
+                name: pkm.speciesName, 
+                label: "Rank 1", 
+                ivText: `${all[0].a}/${all[0].d}/${all[0].s}`, 
+                atk: all[0].realAtk.toFixed(1), 
+                league: code, 
+                ids: ids, 
+                ivs: [all[0]], 
+                shiny: shiny, 
+                class: "" 
+            });
+            addedCount++;
+        }
+    });
+    
+    document.getElementById('bulkInput').value = '';
+    updateUI();
+    if(addedCount > 0) alert(`Added ${addedCount} Pokémon to the queue!`);
 }
 
 function getBaseIds(targetPkm) {
@@ -204,23 +259,26 @@ function updateUI() {
 
 function clearQueue() { queue = []; updateUI(); }
 
+// UPDATED DOWNLOAD FUNCTION
 function downloadJson() {
     let filters = {};
+    
+    // Check our new toggle
+    const useAutoItems = document.getElementById('prefItems').checked;
+    const balls = useAutoItems ? [3] : [];      // 3 = Ultra Ball
+    const berries = useAutoItems ? [706] : [];  // 706 = Golden Razz
+
     queue.forEach(item => {
         const id = crypto.randomUUID();
-        
-        // Use the level of the first IV set in the list for levelMax
-        // (For Rank 1-X, it uses the Rank 1 level)
         const maxLvl = item.ivs[0].level;
 
         filters[id] = {
-            "catchOptionsBerries": [],
-            "catchOptionsPokeballs": [],
+            "catchOptionsBerries": berries,
+            "catchOptionsPokeballs": balls,
             "cpMax": 0,
             "cpMin": 0,
             "enabled": true,
             "encounterFilterId": id,
-            // UPDATED: Now includes League code in Name: "LAPRAS Rank 1 (GL)"
             "encounterFilterName": `${item.name.toUpperCase()} ${item.label} (${item.league})`,
             "filterCp": false,
             "filterGreatLeagueTopRank": false,
@@ -236,7 +294,7 @@ function downloadJson() {
             "ivSets": item.ivs.map(iv => ({ "ivAtk": iv.a, "ivDef": iv.d, "ivSta": iv.s })),
             "ivSumMax": 0,
             "ivSumMin": 0,
-            "levelMax": Math.ceil(maxLvl), 
+            "levelMax": Math.ceil(maxLvl),
             "levelMin": 1,
             "minShowcaseScore": 0,
             "onlyApplyPurificationBonus": false,
@@ -245,7 +303,6 @@ function downloadJson() {
             "pokemonDetailsCatchOriginDmax": false,
             "pokemonId": item.ids.map(dexId => ({ "costume": 0, "form": 0, "gender": 0, "pokedexId": dexId })),
             "removePokemonIdFromListThreshold": 1,
-            // UPDATED: Enabled per your request
             "removePokemonIdFromListWhenCaught": true,
             "sizeXl": false,
             "sizeXs": false,
@@ -254,8 +311,12 @@ function downloadJson() {
             "targetTypes": []
         };
     });
+
     const blob = new Blob([JSON.stringify({ "encounterFilters": filters }, null, 2)], { type: "application/json" });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `PolygonX_PvP_Filters.json`; a.click();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `PolygonX_PvP_Filters.json`;
+    a.click();
 }
 init();
 </script>
