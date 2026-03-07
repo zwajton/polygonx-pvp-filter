@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PvP Filter Generator v35</title>
+    <title>PvP Filter Generator v38</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background: #121212; color: #eee; }
         .container { max-width: 950px; margin: auto; background: #1e1e1e; padding: 25px; border-radius: 12px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -29,7 +29,7 @@
 <body>
 
 <div class="container">
-    <h2 style="text-align: center; color: #2980b9; margin-bottom: 5px;">PvP Filter Generator v35</h2>
+    <h2 style="text-align: center; color: #2980b9; margin-bottom: 5px;">PvP Filter Generator v38</h2>
     <p style="text-align: center; color: #888; margin-bottom: 25px; font-size: 14px;">Optimized for PolygonX #Encounter-Filters</p>
 
     <div class="guide">
@@ -41,7 +41,7 @@
             <li><em>Include Family:</em> Adds the whole evolution line to the filter.</li>
             <li><em>Only Shiny:</em> Bot will only catch the shiny version.</li>
         </ul>
-        <strong>4. Archetypes:</strong> The <strong>Orange Button</strong> adds a Trio: <strong>Bulk</strong> (Rank 1), <strong>Mid</strong> (+5% Atk), and <strong>Slayer</strong> (+10% Atk with survival logic).<br>
+        <strong>4. Archetypes:</strong> The <strong>Orange Button</strong> adds a Trio: <strong>Bulk</strong> (Rank 1), <strong>Mid</strong> (+5% Atk), and <strong>Breaker</strong> (+10% Atk, flips matchups via fast move damage).<br>
         <strong>5. Download:</strong> Add your Pokémon, then hit the green download button and import to Polygon.
     </div>
     
@@ -94,7 +94,7 @@
             </div>
         </div>
         
-        <button class="btn-orange" id="specialBtn" onclick="addArchetypes()" disabled style="margin-top:10px; width:100%;">+ Add Breakpoint Trio (Bulk/Mid/Slayer)</button>
+        <button class="btn-orange" id="specialBtn" onclick="addArchetypes()" disabled style="margin-top:10px; width:100%;">+ Add Breakpoint Trio (Bulk / Mid / Breaker)</button>
     </div>
 
     <div class="queue-box">
@@ -347,7 +347,7 @@ function addArchetypes() {
     const slayer = all.filter(x => x.realAtk >= (bulk.realAtk * 1.10) && x.prod >= (bulk.prod * 0.80)).sort((a,b) => b.prod - a.prod)[0] || all[100];
 
     [bulk, mid, slayer].forEach((item, i) => {
-        const labels = ["BULK", "MID", "SLAYER"];
+        const labels = ["BULK", "MID", "BREAKER"];
         queue.push({ name: pkm.speciesName, label: labels[i], ivText: `${item.a}/${item.d}/${item.s}`, atk: item.realAtk.toFixed(1), league: (league==1500?"GL":league==2500?"UL":"LL"), ids, ivs: [item], shiny, class: "type-slayer" });
     });
     updateUI();
