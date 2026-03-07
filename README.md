@@ -1,4 +1,4 @@
-# 🛡️ PolygonX PoGo PvP Filter Generator (v27)
+# 🛡️ PolygonX PoGo PvP Filter Generator (v33)
 
 An advanced tool designed for **PolygonX** users to generate highly accurate PvP encounter filters. This generator uses exact Game Master stats and CPM (CP Multipliers) to identify the best possible IV combinations for competitive play.
 
