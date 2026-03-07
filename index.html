@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PvP Filter Generator v33</title>
+    <title>PvP Filter Generator v35</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background: #121212; color: #eee; }
         .container { max-width: 950px; margin: auto; background: #1e1e1e; padding: 25px; border-radius: 12px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -29,7 +29,7 @@
 <body>
 
 <div class="container">
-    <h2 style="text-align: center; color: #2980b9; margin-bottom: 5px;">PvP Filter Generator v33</h2>
+    <h2 style="text-align: center; color: #2980b9; margin-bottom: 5px;">PvP Filter Generator v35</h2>
     <p style="text-align: center; color: #888; margin-bottom: 25px; font-size: 14px;">Optimized for PolygonX #Encounter-Filters</p>
 
     <div class="guide">
@@ -112,19 +112,44 @@
 <script>
 // (Previous Script Logic remains exactly the same as v27)
 const CPM = {1:0.094,1.5:0.13513743,2:0.16639787,2.5:0.19265092,3:0.21573247,3.5:0.23657266,4:0.25572005,4.5:0.27353038,5:0.29024988,5.5:0.30605737,6:0.3210876,6.5:0.33544501,7:0.34921903,7.5:0.36248612,8:0.37523559,8.5:0.38753336,9:0.39940354,9.5:0.41088741,10:0.42250001,10.5:0.43292641,11:0.44310755,11.5:0.45305995,12:0.46279839,12.5:0.47233608,13:0.48168495,13.5:0.4908558,14:0.49985844,14.5:0.50870178,15:0.51739395,15.5:0.52594251,16:0.53435433,16.5:0.54263576,17:0.55079269,17.5:0.55883057,18:0.56675452,18.5:0.57456915,19:0.58227891,19.5:0.5898879,20:0.59740001,20.5:0.60481881,21:0.61215731,21.5:0.61940412,22:0.62656713,22.5:0.63364917,23:0.64065295,23.5:0.64758097,24:0.65444234,24.5:0.6612148,25:0.667934,25.5:0.6746042,26:0.68121313,26.5:0.6877694,27:0.69427237,27.5:0.70072386,28:0.7071249,28.5:0.71347725,29:0.71978236,29.5:0.72604155,30:0.7317,30.5:0.734741,31:0.73776948,31.5:0.74078557,32:0.74378943,32.5:0.74678121,33:0.74976104,33.5:0.75272908,34:0.75568551,34.5:0.75863037,35:0.76156384,35.5:0.76448606,36:0.76739717,36.5:0.77029727,37:0.7731865,37.5:0.77606498,38:0.77892748,38.5:0.78177373,39:0.78460312,39.5:0.78741585,40:0.7903,40.5:0.7928,41:0.7953,41.5:0.7978,42:0.8003,42.5:0.8028,43:0.8053,43.5:0.8078,44:0.8103,44.5:0.8128,45:0.8153,45.5:0.8178,46:0.8203,46.5:0.8228,47:0.8253,47.5:0.8278,48:0.8303,48.5:0.8328,49:0.8353,49.5:0.8378,50:0.8403};
+let masterFileData = null; // Declare this globally so getBaseIds can see it
 let pokemonData = [];
 let queue = [];
 
 async function init() {
     try {
-        const res = await fetch('https://raw.githubusercontent.com/pvpoke/pvpoke/master/src/data/gamemaster.json');
-        const data = await res.json();
-        pokemonData = data.pokemon;
+        document.getElementById('status').innerText = "FETCHING MASTERFILES...";
+        
+        // Fetch both PvPoke and the WatWowMap Masterfile at the same time
+        const [pvpokeRes, masterRes] = await Promise.all([
+            fetch('https://raw.githubusercontent.com/pvpoke/pvpoke/master/src/data/gamemaster.json'),
+            fetch('https://raw.githubusercontent.com/WatWowMap/Masterfile-Generator/refs/heads/master/master-latest-raw.json')
+        ]);
+
+        const pvpokeData = await pvpokeRes.json();
+        masterFileData = await masterRes.json(); // Stored globally for form mapping
+        pokemonData = pvpokeData.pokemon;
+
         const list = document.getElementById('pkmList');
-        pokemonData.forEach(p => { let opt = document.createElement('option'); opt.value = p.speciesName; list.appendChild(opt); });
+        list.innerHTML = ""; // Clear list before adding
+
+        pokemonData.forEach(p => {
+            // Filter out shadows/megas from the search list to keep it clean, 
+            // but keep the base species
+            if (!p.speciesId.includes("_shadow") && !p.speciesId.includes("_mega")) {
+                let opt = document.createElement('option');
+                opt.value = p.speciesName;
+                list.appendChild(opt);
+            }
+        });
+
         document.getElementById('status').innerText = "SYSTEM ARMED ✔️";
         document.getElementById('specialBtn').disabled = false;
-    } catch (e) { document.getElementById('status').innerText = "CONNECTION ERROR!"; }
+        
+    } catch (e) {
+        console.error(e);
+        document.getElementById('status').innerText = "CONNECTION ERROR!";
+    }
 }
 
 // Helper to get selected berries/balls
@@ -182,13 +207,74 @@ function toggleBulk() {
 }
 
 function getBaseIds(targetPkm) {
-    let ids = [493];
-    if (targetPkm.family && targetPkm.family.id) {
-        let fam = pokemonData.filter(x => x.family && x.family.id === targetPkm.family.id).sort((a,b)=>a.dex-b.dex);
-        ids.push(fam[0].dex);
-        if (document.getElementById('addEvolutions').checked) fam.forEach(m => { if(!ids.includes(m.dex)) ids.push(m.dex); });
-    } else { ids.push(targetPkm.dex); }
-    return ids;
+    let pkmIds = [];
+    const dexId = targetPkm.dex;
+    const fullName = targetPkm.speciesName;
+    let detectedForm = 0;
+
+    if (masterFileData && masterFileData.pokemon && masterFileData.pokemon[dexId]) {
+        const masterPkm = masterFileData.pokemon[dexId];
+        detectedForm = masterPkm.defaultFormId || 0;
+
+		const formMatch = fullName.match(/\(([^)]+)\)/);
+			if (formMatch) {
+			let extracted = formMatch[1].toLowerCase().trim();
+			let normalized = extracted;
+			if (normalized === "alolan") normalized = "alola";
+			if (normalized === "galarian") normalized = "galar";
+			if (normalized === "hisuian") normalized = "hisui";
+			if (normalized === "paldean") normalized = "paldea";
+
+			// protoSuffix = the exact suffix used in masterfile protos
+			let protoSuffix = extracted;
+			if (extracted === "alolan") protoSuffix = "alola";      // proto: NINETALES_ALOLA
+			if (extracted === "paldean") protoSuffix = "paldea";    // proto: likely X_PALDEA
+			// galarian and hisuian are already correct as-is
+
+			// Primary: search forms nested on the dex entry
+			if (masterPkm.forms) {
+				for (const [fId, fData] of Object.entries(masterPkm.forms)) {
+				const proto = fData.proto ? fData.proto.toLowerCase() : "";
+				const formName = fData.formName ? fData.formName.toLowerCase() : "";
+				if (proto.includes(normalized) || formName.includes(normalized)) {
+					detectedForm = parseInt(fId);
+                break;
+            }
+        }
+    }
+
+			// Fallback: search flat masterFileData.forms using the ORIGINAL extracted word (e.g. "galarian")
+			if (detectedForm === (masterPkm.defaultFormId || 0) && masterFileData.forms) {
+				const baseName = fullName.replace(/\s*\(.*\)/, '').trim().toUpperCase();
+				const expectedProto = `${baseName}_${protoSuffix.toUpperCase()}`; // e.g. "ARTICUNO_GALARIAN"
+				console.log(`[DEBUG] Fallback: searching for proto "${expectedProto}"`);
+        
+				for (const [fId, fData] of Object.entries(masterFileData.forms)) {
+					if (fData.proto && fData.proto.toUpperCase() === expectedProto) {
+						detectedForm = parseInt(fId);
+						console.log(`[DEBUG] ✅ Fallback matched formId ${detectedForm}`);
+						break;
+						}
+					}
+				}
+			}
+    }
+
+    console.log(`[ID MAPPER] Result -> ${fullName} | Form: ${detectedForm}`);
+    pkmIds.push({ pokedexId: dexId, form: detectedForm, costume: 0, gender: 0 });
+
+    if (document.getElementById('addEvolutions').checked && targetPkm.family && targetPkm.family.evolutions) {
+        targetPkm.family.evolutions.forEach(evoName => {
+            const evoData = pokemonData.find(p => p.speciesId === evoName);
+            if (evoData) {
+                const evoMaster = masterFileData.pokemon[evoData.dex];
+                const eForm = evoMaster ? (evoMaster.defaultFormId || 0) : 0;
+                pkmIds.push({ pokedexId: evoData.dex, form: eForm, costume: 0, gender: 0 });
+            }
+        });
+    }
+
+    return pkmIds;
 }
 
 // Ensure your calculateAllSpreads includes the level property:
@@ -323,7 +409,7 @@ function downloadJson() {
             "onlyBackground": false,
             "onlyShiny": item.shiny,
             "pokemonDetailsCatchOriginDmax": false,
-            "pokemonId": item.ids.map(dexId => ({ "costume": 0, "form": 0, "gender": 0, "pokedexId": dexId })),
+            "pokemonId": item.ids, // This ensures the [ { pokedexId: 144, form: 716... } ] structure
             "removePokemonIdFromListThreshold": 1,
             "removePokemonIdFromListWhenCaught": true,
             "sizeXl": false,
