@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PvP Filter Generator v32</title>
+    <title>PvP Filter Generator v33</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background: #121212; color: #eee; }
         .container { max-width: 950px; margin: auto; background: #1e1e1e; padding: 25px; border-radius: 12px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -29,7 +29,7 @@
 <body>
 
 <div class="container">
-    <h2 style="text-align: center; color: #2980b9; margin-bottom: 5px;">PvP Filter Generator v32</h2>
+    <h2 style="text-align: center; color: #2980b9; margin-bottom: 5px;">PvP Filter Generator v33</h2>
     <p style="text-align: center; color: #888; margin-bottom: 25px; font-size: 14px;">Optimized for Polygon #Encounter-Filters</p>
 
     <div class="guide">
@@ -47,17 +47,27 @@
     
     <div id="status" style="text-align:center; font-weight:bold; margin-bottom:15px; color:#aaa;">Connecting to GameData...</div>
 
-    <input type="text" id="pkmInput" placeholder="Search Pokemon (e.g. Scizor, Feraligatr)..." list="pkmList">
+<div class="options-row" style="background: #252525; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-bottom: 10px;">
+    <label style="color: #3498db; font-weight: bold; font-size: 0.9em; display: block; margin-bottom: 5px;">
+        Search for Pokémon here you want added:
+    </label>
+    <input type="text" id="pkmInput" placeholder="e.g. Dondozo..." list="pkmList" 
+        style="width: 100%; box-sizing: border-box; padding: 10px; border-radius: 6px; border: 1px solid #444; background: #1a1a1a; color: white;">
     <datalist id="pkmList"></datalist>
+</div>
 
-<div class="options-row" style="background: #252525; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-bottom: 10px; box-sizing: border-box;">
-    <label style="color: #3498db; font-weight: bold; font-size: 0.9em;">BULK ADD (PASTE LIST):</label>
-    <textarea id="bulkInput" placeholder="Lapras, Steelix, Dondozo..." 
-    style="width: 100%; max-width: 100%; box-sizing: border-box; height: 50px; background: #1a1a1a; color: white; border-radius: 6px; padding: 10px; border: 1px solid #444; margin-top: 5px; resize: none;"></textarea>
-    <button class="btn-blue" onclick="processBulk()" 
-        style="margin-top: 10px; width: 100%; box-sizing: border-box; font-weight: bold;">
-        ⚡ ADD ALL FROM LIST (RANK 1)
+<div class="options-row" style="background: #252525; border-radius: 8px; border: 1px solid #333; margin-bottom: 10px; overflow: hidden;">
+    <button onclick="toggleBulk()" style="width: 100%; background: #2d2d2d; color: #3498db; border: none; padding: 12px; text-align: left; cursor: pointer; font-weight: bold; display: flex; justify-content: space-between; align-items: center;">
+        <span>⚡ BULK ADD MENU</span>
+        <span id="bulkArrow">▼</span>
     </button>
+    
+    <div id="bulkContent" style="display: none; padding: 15px; background: #252525; border-top: 1px solid #333;">
+        <label style="color: #888; font-size: 0.8em; display: block; margin-bottom: 5px;">PASTE LIST (COMMA SEPARATED):</label>
+        <textarea id="bulkInput" placeholder="Lapras, Steelix, Dondozo..." 
+            style="width: 100%; max-width: 100%; box-sizing: border-box; height: 60px; background: #1a1a1a; color: white; border-radius: 6px; padding: 10px; border: 1px solid #444; resize: none;"></textarea>
+        <button class="btn-blue" onclick="processBulk()" style="margin-top: 10px; width: 100%; font-weight: bold;">ADD ALL AS RANK 1</button>
+    </div>
 </div>
 
     <div class="options-row">
@@ -157,6 +167,18 @@ function processBulk() {
     document.getElementById('bulkInput').value = '';
     updateUI();
     if(addedCount > 0) alert(`Added ${addedCount} Pokémon to the queue!`);
+}
+
+function toggleBulk() {
+    const content = document.getElementById('bulkContent');
+    const arrow = document.getElementById('bulkArrow');
+    if (content.style.display === "none") {
+        content.style.display = "block";
+        arrow.innerText = "▲";
+    } else {
+        content.style.display = "none";
+        arrow.innerText = "▼";
+    }
 }
 
 function getBaseIds(targetPkm) {
