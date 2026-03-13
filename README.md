@@ -12,11 +12,29 @@ An advanced tool designed for **PolygonX** users to generate highly accurate PvP
 
 ## ⚔️ The Archetype System
 
-Unlike standard rank checkers, this tool helps you find "Matchup Flippers":
+This tool generates three IV archetypes per Pokémon, each targeting a different 
+attack weight. These are **heuristic spreads**, not calculated breakpoints — they 
+increase the probability of hitting damage breakpoints in common matchups without 
+requiring a specific target defender.
 
-* **BULK:** The traditional Rank 1 (Maximum Stat Product).
-* **MID:** Targets **+5% Attack** vs Rank 1, with 90% bulk floor and minimum Stamina of 5 — hits general breakpoints without going glassy.
-* **BREAKER:** Targets **+10% Attack** for aggressive fast-move pressure, with 80% bulk floor and minimum Stamina of 5 to ensure survivability.
+* **BULK:** The traditional Rank 1 (Maximum Stat Product). The safest all-around 
+  choice and the baseline all other archetypes are measured against.
+
+* **MID:** Targets a spread with **+5% Attack** vs Rank 1, while maintaining 90% 
+  of the stat product and a minimum Stamina of 5. This is the sweet spot for 
+  general breakpoints — more fast move damage without sacrificing meaningful bulk.
+
+* **BREAKER:** Targets a spread with **+10% Attack** vs Rank 1, while maintaining 
+  80% of the stat product and a minimum Stamina of 5. This is for flipping specific 
+  matchups through fast move pressure. Use when you know a Pokémon is meta-relevant 
+  and CMP ties matter.
+
+> **Note:** True breakpoints are matchup-specific — the exact Attack needed to deal 
+> +1 damage per fast move depends on the defender's Defense stat, level, and the 
+> move's base power. MID and BREAKER spreads are designed to land in the right 
+> attack range for *most* common meta matchups, but they do not guarantee a 
+> breakpoint against any specific target. For exact breakpoint calculation against 
+> a known defender, tools like PvPoke remain the reference.
 
 ## 🧬 Smart Form Mapping
 
