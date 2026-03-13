@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PvP Filter Generator v38</title>
+    <title>PvP Filter Generator v40</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background: #121212; color: #eee; }
         .container { max-width: 950px; margin: auto; background: #1e1e1e; padding: 25px; border-radius: 12px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -29,7 +29,7 @@
 <body>
 
 <div class="container">
-    <h2 style="text-align: center; color: #2980b9; margin-bottom: 5px;">PvP Filter Generator v38</h2>
+    <h2 style="text-align: center; color: #2980b9; margin-bottom: 5px;">PvP Filter Generator v40</h2>
     <p style="text-align: center; color: #888; margin-bottom: 25px; font-size: 14px;">Optimized for PolygonX #Encounter-Filters</p>
 
     <div class="guide">
@@ -206,73 +206,90 @@ function toggleBulk() {
     }
 }
 
-function getBaseIds(targetPkm) {
-    let pkmIds = [];
-    const dexId = targetPkm.dex;
-    const fullName = targetPkm.speciesName;
-    let detectedForm = 0;
+function resolveFormId(dexId, fullName) {
+    if (!masterFileData || !masterFileData.pokemon || !masterFileData.pokemon[dexId]) return 0;
+    const masterPkm = masterFileData.pokemon[dexId];
+    let detectedForm = masterPkm.defaultFormId || 0;
 
-    if (masterFileData && masterFileData.pokemon && masterFileData.pokemon[dexId]) {
-        const masterPkm = masterFileData.pokemon[dexId];
-        detectedForm = masterPkm.defaultFormId || 0;
+    const formMatch = fullName.match(/\(([^)]+)\)/);
+    if (formMatch) {
+        let extracted = formMatch[1].toLowerCase().trim();
+        let normalized = extracted;
+        if (normalized === "alolan") normalized = "alola";
+        if (normalized === "galarian") normalized = "galar";
+        if (normalized === "hisuian") normalized = "hisui";
+        if (normalized === "paldean") normalized = "paldea";
 
-		const formMatch = fullName.match(/\(([^)]+)\)/);
-			if (formMatch) {
-			let extracted = formMatch[1].toLowerCase().trim();
-			let normalized = extracted;
-			if (normalized === "alolan") normalized = "alola";
-			if (normalized === "galarian") normalized = "galar";
-			if (normalized === "hisuian") normalized = "hisui";
-			if (normalized === "paldean") normalized = "paldea";
+        let protoSuffix = extracted;
+        if (extracted === "alolan") protoSuffix = "alola";
+        if (extracted === "paldean") protoSuffix = "paldea";
 
-			// protoSuffix = the exact suffix used in masterfile protos
-			let protoSuffix = extracted;
-			if (extracted === "alolan") protoSuffix = "alola";      // proto: NINETALES_ALOLA
-			if (extracted === "paldean") protoSuffix = "paldea";    // proto: likely X_PALDEA
-			// galarian and hisuian are already correct as-is
+        if (masterPkm.forms) {
+            for (const [fId, fData] of Object.entries(masterPkm.forms)) {
+                const proto = fData.proto ? fData.proto.toLowerCase() : "";
+                const formName = fData.formName ? fData.formName.toLowerCase() : "";
+                if (proto.includes(normalized) || formName.includes(normalized)) {
+                    detectedForm = parseInt(fId);
+                    break;
+                }
+            }
+        }
 
-			// Primary: search forms nested on the dex entry
-			if (masterPkm.forms) {
-				for (const [fId, fData] of Object.entries(masterPkm.forms)) {
-				const proto = fData.proto ? fData.proto.toLowerCase() : "";
-				const formName = fData.formName ? fData.formName.toLowerCase() : "";
-				if (proto.includes(normalized) || formName.includes(normalized)) {
-					detectedForm = parseInt(fId);
-                break;
+        if (detectedForm === (masterPkm.defaultFormId || 0) && masterFileData.forms) {
+            const baseName = fullName.replace(/\s*\(.*\)/, '').trim().toUpperCase();
+            const expectedProto = `${baseName}_${protoSuffix.toUpperCase()}`;
+            for (const [fId, fData] of Object.entries(masterFileData.forms)) {
+                if (fData.proto && fData.proto.toUpperCase() === expectedProto) {
+                    detectedForm = parseInt(fId);
+                    console.log(`[DEBUG] ✅ Fallback matched formId ${detectedForm} (${expectedProto})`);
+                    break;
+                }
             }
         }
     }
 
-			// Fallback: search flat masterFileData.forms using the ORIGINAL extracted word (e.g. "galarian")
-			if (detectedForm === (masterPkm.defaultFormId || 0) && masterFileData.forms) {
-				const baseName = fullName.replace(/\s*\(.*\)/, '').trim().toUpperCase();
-				const expectedProto = `${baseName}_${protoSuffix.toUpperCase()}`; // e.g. "ARTICUNO_GALARIAN"
-				console.log(`[DEBUG] Fallback: searching for proto "${expectedProto}"`);
-        
-				for (const [fId, fData] of Object.entries(masterFileData.forms)) {
-					if (fData.proto && fData.proto.toUpperCase() === expectedProto) {
-						detectedForm = parseInt(fId);
-						console.log(`[DEBUG] ✅ Fallback matched formId ${detectedForm}`);
-						break;
-						}
-					}
-				}
-			}
-    }
-
     console.log(`[ID MAPPER] Result -> ${fullName} | Form: ${detectedForm}`);
-    pkmIds.push({ pokedexId: dexId, form: detectedForm, costume: 0, gender: 0 });
+    return detectedForm;
+}
 
-    if (document.getElementById('addEvolutions').checked && targetPkm.family && targetPkm.family.evolutions) {
-        targetPkm.family.evolutions.forEach(evoName => {
-            const evoData = pokemonData.find(p => p.speciesId === evoName);
-            if (evoData) {
-                const evoMaster = masterFileData.pokemon[evoData.dex];
-                const eForm = evoMaster ? (evoMaster.defaultFormId || 0) : 0;
-                pkmIds.push({ pokedexId: evoData.dex, form: eForm, costume: 0, gender: 0 });
-            }
+function getFirstStage(pkm) {
+    if (pkm.family && pkm.family.parent) {
+        const parent = pokemonData.find(p => p.speciesId === pkm.family.parent);
+        if (parent) return getFirstStage(parent);
+    }
+    return pkm;
+}
+
+function getBaseIds(targetPkm) {
+    const basePkm = getFirstStage(targetPkm);
+    const addEvos = document.getElementById('addEvolutions').checked;
+
+    let chain = [basePkm];
+    if (addEvos && basePkm.family && basePkm.family.evolutions) {
+        basePkm.family.evolutions.forEach(evoName => {
+            const evo = pokemonData.find(p => p.speciesId === evoName);
+            if (evo) chain.push(evo);
         });
     }
+
+    let pkmIds = chain.map(pkm => {
+        const formId = resolveFormId(pkm.dex, pkm.speciesName);
+        let gender = 0;
+        if (pkm.family && pkm.family.evolutions) {
+            for (const evoName of pkm.family.evolutions) {
+                const evo = pokemonData.find(p => p.speciesId === evoName);
+                if (evo) {
+                    const evoMaster = masterFileData?.pokemon?.[evo.dex];
+                    const genderReq = evoMaster?.genderRequirement ?? 0;
+                    if (genderReq > 0) { gender = genderReq; break; }
+                }
+            }
+        }
+        return { pokedexId: pkm.dex, form: formId, costume: 0, gender };
+    });
+
+    // Always append Arceus as catch-all placeholder
+    pkmIds.push({ pokedexId: 493, form: 0, costume: 0, gender: 0 });
 
     return pkmIds;
 }
@@ -341,14 +358,16 @@ function addArchetypes() {
     const all = calculateAllSpreads(pkm, league);
     const ids = getBaseIds(pkm);
     const shiny = document.getElementById('isShiny').checked;
+    const leagueCode = league == 1500 ? "GL" : league == 2500 ? "UL" : "LL";
     const bulk = all[0];
 
-    const mid = all.filter(x => x.realAtk >= (bulk.realAtk * 1.05) && x.prod >= (bulk.prod * 0.90)).sort((a,b) => b.prod - a.prod)[0] || all[20];
-    const slayer = all.filter(x => x.realAtk >= (bulk.realAtk * 1.10) && x.prod >= (bulk.prod * 0.80)).sort((a,b) => b.prod - a.prod)[0] || all[100];
+    const highestAtk = [...all].sort((a,b) => b.realAtk - a.realAtk)[0];
+    const mid     = all.filter(x => x.realAtk >= (bulk.realAtk * 1.05) && x.prod >= (bulk.prod * 0.90) && x.s >= 5).sort((a,b) => b.prod - a.prod)[0] || highestAtk;
+    const breaker = all.filter(x => x.realAtk >= (bulk.realAtk * 1.10) && x.prod >= (bulk.prod * 0.80) && x.s >= 5).sort((a,b) => b.prod - a.prod)[0] || highestAtk;
 
-    [bulk, mid, slayer].forEach((item, i) => {
+    [bulk, mid, breaker].forEach((item, i) => {
         const labels = ["BULK", "MID", "BREAKER"];
-        queue.push({ name: pkm.speciesName, label: labels[i], ivText: `${item.a}/${item.d}/${item.s}`, atk: item.realAtk.toFixed(1), league: (league==1500?"GL":league==2500?"UL":"LL"), ids, ivs: [item], shiny, class: "type-slayer" });
+        queue.push({ name: pkm.speciesName, label: labels[i], ivText: `${item.a}/${item.d}/${item.s}`, atk: item.realAtk.toFixed(1), league: leagueCode, ids, ivs: [item], shiny, class: "type-slayer" });
     });
     updateUI();
 }
@@ -357,8 +376,10 @@ function updateUI() {
     const container = document.getElementById('queueList');
     container.innerHTML = queue.map((item, index) => `
         <div class="queue-item ${item.class}">
-            <strong>${item.name}</strong> [${item.label}] ${item.ivText}
+            <strong>${item.name}</strong> [${item.label}]
+            <span style="color:#aaa">${item.ivText}</span>
             <span class="stat-badge">ATK: ${item.atk}</span>
+            <span style="color:#888; font-size:11px; margin-left:6px;">Lvl ${item.ivs[0].level} · ${item.league}</span>
             <span class="remove-btn" onclick="queue.splice(${index},1);updateUI()">×</span>
         </div>
     `).join('');

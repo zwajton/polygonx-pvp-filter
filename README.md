@@ -4,7 +4,7 @@ An advanced tool designed for **PolygonX** users to generate highly accurate PvP
 
 ## 🚀 Features
 
-* **Breakpoint Archetypes:** Generate a "Trio" of filters (Bulk, Mid, and Slayer) to ensure you catch Pokémon that hit specific damage breakpoints while maintaining survival.
+* **Breakpoint Archetypes:** Generate a Trio of filters (Bulk, Mid, and Breaker) to catch Pokémon that hit specific damage breakpoints while maintaining survival.
 * **Precise Math:** Uses the correct "Floored HP" logic used by professional rank checkers (like PvPoke).
 * **Multi-Export:** Add dozens of Pokémon to a single `.json` file for easy importing.
 * **Family Logic:** Automatically identifies the base form of any Pokémon family to ensure your filters catch the right babies for evolution.
@@ -15,8 +15,8 @@ An advanced tool designed for **PolygonX** users to generate highly accurate PvP
 Unlike standard rank checkers, this tool helps you find "Matchup Flippers":
 
 * **BULK:** The traditional Rank 1 (Maximum Stat Product).
-* **MID:** Targets **+5% Attack** compared to Rank 1 while maintaining 90% of the total bulk. Great for general consistency.
-* **SLAYER:** Targets **+10% Attack** for aggressive fast-move pressure, but mandates an 80% bulk floor so the Pokémon isn't too glassy.
+* **MID:** Targets **+5% Attack** vs Rank 1, with 90% bulk floor and minimum Stamina of 5 — hits general breakpoints without going glassy.
+* **BREAKER:** Targets **+10% Attack** for aggressive fast-move pressure, with 80% bulk floor and minimum Stamina of 5 to ensure survivability.
 
 ## 🧬 Smart Form Mapping
 
