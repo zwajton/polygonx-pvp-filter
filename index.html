@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PvP Filter Generator v40</title>
+    <title>PvP Filter Generator v41</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background: #121212; color: #eee; }
         .container { max-width: 950px; margin: auto; background: #1e1e1e; padding: 25px; border-radius: 12px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -29,7 +29,7 @@
 <body>
 
 <div class="container">
-    <h2 style="text-align: center; color: #2980b9; margin-bottom: 5px;">PvP Filter Generator v40</h2>
+    <h2 style="text-align: center; color: #2980b9; margin-bottom: 5px;">PvP Filter Generator v41</h2>
     <p style="text-align: center; color: #888; margin-bottom: 25px; font-size: 14px;">Optimized for PolygonX #Encounter-Filters</p>
 
     <div class="guide">
@@ -206,6 +206,29 @@ function toggleBulk() {
     }
 }
 
+// Egg-only baby Pokémon that never appear in the wild — skip these when resolving first stage
+const EGG_ONLY_DEX_IDS = new Set([
+    172,  // Pichu
+    173,  // Cleffa
+    174,  // Igglybuff
+    175,  // Togepi
+    236,  // Tyrogue
+    238,  // Smoochum
+    239,  // Elekid
+    240,  // Magby
+    298,  // Azurill
+    360,  // Wynaut
+    406,  // Budew
+    433,  // Chingling
+    438,  // Bonsly
+    439,  // Mime Jr.
+    440,  // Happiny
+    446,  // Munchlax
+    447,  // Riolu
+    458,  // Mantyke
+    848,  // Toxel
+]);
+
 function resolveFormId(dexId, fullName) {
     if (!masterFileData || !masterFileData.pokemon || !masterFileData.pokemon[dexId]) return 0;
     const masterPkm = masterFileData.pokemon[dexId];
@@ -252,10 +275,14 @@ function resolveFormId(dexId, fullName) {
     return detectedForm;
 }
 
+// Walk up family.parent chain to find the first *catchable* stage.
+// Skips egg-only baby Pokémon that never spawn in the wild.
 function getFirstStage(pkm) {
     if (pkm.family && pkm.family.parent) {
         const parent = pokemonData.find(p => p.speciesId === pkm.family.parent);
-        if (parent) return getFirstStage(parent);
+        if (parent && !EGG_ONLY_DEX_IDS.has(parent.dex)) {
+            return getFirstStage(parent); // recurse up only if parent is catchable
+        }
     }
     return pkm;
 }
