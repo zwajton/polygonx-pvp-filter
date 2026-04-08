@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PvP Filter Generator v41</title>
+    <title>PvP Filter Generator v42</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background: #121212; color: #eee; }
         .container { max-width: 950px; margin: auto; background: #1e1e1e; padding: 25px; border-radius: 12px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -29,7 +29,7 @@
 <body>
 
 <div class="container">
-    <h2 style="text-align: center; color: #2980b9; margin-bottom: 5px;">PvP Filter Generator v41</h2>
+    <h2 style="text-align: center; color: #2980b9; margin-bottom: 5px;">PvP Filter Generator v42</h2>
     <p style="text-align: center; color: #888; margin-bottom: 25px; font-size: 14px;">Optimized for PolygonX #Encounter-Filters</p>
 
     <div class="guide">
@@ -93,7 +93,9 @@
                 <button class="btn-blue" onclick="addCustomRanks()">Add</button>
             </div>
         </div>
-        
+        <div class="flex" style="margin-top:8px;">
+            <button class="btn-orange" onclick="addGenerateAll()">⚡ Generate All (LL / GL / UL)</button>
+        </div>
         <button class="btn-orange" id="specialBtn" onclick="addArchetypes()" disabled style="margin-top:10px; width:100%;">+ Add Breakpoint Trio (Bulk / Mid / Breaker)</button>
     </div>
 
@@ -106,7 +108,14 @@
         <button class="btn-green" id="dlBtn" onclick="downloadJson()" disabled>Download .json</button>
         <button class="btn-clear" onclick="clearQueue()">Clear All</button>
     </div>
-    <pre id="output">// JSON Code Preview</pre>
+
+    <!-- Debug preview toggle -->
+    <div style="margin-top:12px; text-align:right;">
+        <button id="debugToggleBtn" onclick="toggleDebug()" style="flex:none; padding:6px 14px; font-size:12px; background:#2d2d2d; color:#888; border:1px solid #444; border-radius:6px; cursor:pointer;">🐛 Debug View: OFF</button>
+    </div>
+    <div id="debugPanel" style="display:none; margin-top:8px;">
+        <pre id="output">// Add Pokémon to see JSON preview...</pre>
+    </div>
 </div>
 
 <script>
@@ -372,6 +381,70 @@ function addRanks(count) {
     updateUI();
 }
 
+function addGenerateAll() {
+    const pkm = pokemonData.find(x => x.speciesName === document.getElementById('pkmInput').value);
+    if (!pkm) return alert("Select a Pokémon first!");
+    const shiny = document.getElementById('isShiny').checked;
+    [[500,"LL"],[1500,"GL"],[2500,"UL"]].forEach(([league, code]) => {
+        const all = calculateAllSpreads(pkm, league);
+        const ids = getBaseIds(pkm);
+        queue.push({ name: pkm.speciesName, label: "Rank 1", ivText: `${all[0].a}/${all[0].d}/${all[0].s}`, atk: all[0].realAtk.toFixed(1), league: code, ids, ivs: [all[0]], shiny, class: "" });
+    });
+    updateUI();
+}
+
+function toggleDebug() {
+    const panel = document.getElementById('debugPanel');
+    const btn = document.getElementById('debugToggleBtn');
+    const isHidden = panel.style.display === 'none';
+    panel.style.display = isHidden ? 'block' : 'none';
+    btn.textContent = isHidden ? '🐛 Debug View: ON' : '🐛 Debug View: OFF';
+    btn.style.color = isHidden ? '#27ae60' : '#888';
+    btn.style.borderColor = isHidden ? '#27ae60' : '#444';
+    if (isHidden) updatePreview();
+}
+
+function updatePreview() {
+    const panel = document.getElementById('debugPanel');
+    if (panel.style.display === 'none') return; // only update when visible
+    document.getElementById('output').textContent = JSON.stringify({ encounterFilters: buildFilters() }, null, 2);
+}
+
+function buildFilters() {
+    let filters = {};
+    const useAutoItems = document.getElementById('prefItems').checked;
+    const balls = useAutoItems ? [3] : [];
+    const berries = useAutoItems ? [706] : [];
+
+    queue.forEach(item => {
+        const id = crypto.randomUUID();
+        const maxLvl = item.ivs[0].level;
+        filters[id] = {
+            catchOptionsBerries: berries,
+            catchOptionsPokeballs: balls,
+            cpMax: 0, cpMin: 0,
+            enabled: true,
+            encounterFilterId: id,
+            encounterFilterName: `${item.name.toUpperCase()} ${item.label} (${item.league})`,
+            filterCp: false, filterGreatLeagueTopRank: false, filterIvSum: false,
+            filterLevel: true, filterOnlyCatch: item.shiny, filterPokemonId: true,
+            filterShowcaseScore: false, filterSize: false, filterSpecificIv: true,
+            filterType: false, filterUltraLeagueTopRank: false,
+            ivSets: item.ivs.map(iv => ({ ivAtk: iv.a, ivDef: iv.d, ivSta: iv.s })),
+            ivSumMax: 0, ivSumMin: 0,
+            levelMax: Math.ceil(maxLvl), levelMin: 1,
+            minShowcaseScore: 0,
+            onlyApplyPurificationBonus: false, onlyBackground: false, onlyShiny: item.shiny,
+            pokemonDetailsCatchOriginDmax: false,
+            pokemonId: item.ids,
+            removePokemonIdFromListThreshold: 1, removePokemonIdFromListWhenCaught: true,
+            sizeXl: false, sizeXs: false, sizeXxl: false, sizeXxs: false,
+            targetTypes: []
+        };
+    });
+    return filters;
+}
+
 function addCustomRanks() {
     const val = parseInt(document.getElementById('customRank').value);
     if (!val || val < 1) return alert("Enter a valid rank number.");
@@ -385,95 +458,108 @@ function addArchetypes() {
     const all = calculateAllSpreads(pkm, league);
     const ids = getBaseIds(pkm);
     const shiny = document.getElementById('isShiny').checked;
-    const leagueCode = league == 1500 ? "GL" : league == 2500 ? "UL" : "LL";
+    const lc = league == 1500 ? "GL" : league == 2500 ? "UL" : "LL";
     const bulk = all[0];
-
     const highestAtk = [...all].sort((a,b) => b.realAtk - a.realAtk)[0];
     const mid     = all.filter(x => x.realAtk >= (bulk.realAtk * 1.05) && x.prod >= (bulk.prod * 0.90) && x.s >= 5).sort((a,b) => b.prod - a.prod)[0] || highestAtk;
     const breaker = all.filter(x => x.realAtk >= (bulk.realAtk * 1.10) && x.prod >= (bulk.prod * 0.80) && x.s >= 5).sort((a,b) => b.prod - a.prod)[0] || highestAtk;
+    [["BULK", bulk], ["MID", mid], ["BREAKER", breaker]].forEach(([label, item]) => {
+        queue.push({ name: pkm.speciesName, label, ivText: `${item.a}/${item.d}/${item.s}`, atk: item.realAtk.toFixed(1), league: lc, ids, ivs: [item], shiny, class: "type-slayer" });
+    });
+    updateUI();
+}
 
-    [bulk, mid, breaker].forEach((item, i) => {
-        const labels = ["BULK", "MID", "BREAKER"];
-        queue.push({ name: pkm.speciesName, label: labels[i], ivText: `${item.a}/${item.d}/${item.s}`, atk: item.realAtk.toFixed(1), league: leagueCode, ids, ivs: [item], shiny, class: "type-slayer" });
+function addGenerateAll() {
+    const pkm = pokemonData.find(x => x.speciesName === document.getElementById('pkmInput').value);
+    if (!pkm) return alert("Select a Pokémon first!");
+    const shiny = document.getElementById('isShiny').checked;
+    [[500,"LL"],[1500,"GL"],[2500,"UL"]].forEach(([league, code]) => {
+        const all = calculateAllSpreads(pkm, league);
+        const ids = getBaseIds(pkm);
+        queue.push({ name: pkm.speciesName, label: "Rank 1", ivText: `${all[0].a}/${all[0].d}/${all[0].s}`, atk: all[0].realAtk.toFixed(1), league: code, ids, ivs: [all[0]], shiny, class: "" });
     });
     updateUI();
 }
 
 function updateUI() {
     const container = document.getElementById('queueList');
+    if (!queue.length) {
+        container.innerHTML = '<i>Empty...</i>';
+        document.getElementById('dlBtn').disabled = true;
+        return;
+    }
     container.innerHTML = queue.map((item, index) => `
         <div class="queue-item ${item.class}">
             <strong>${item.name}</strong> [${item.label}]
-            <span style="color:#aaa">${item.ivText}</span>
+            <span style="color:#aaa; margin-left:6px;">${item.ivText}</span>
             <span class="stat-badge">ATK: ${item.atk}</span>
             <span style="color:#888; font-size:11px; margin-left:6px;">Lvl ${item.ivs[0].level} · ${item.league}</span>
             <span class="remove-btn" onclick="queue.splice(${index},1);updateUI()">×</span>
         </div>
     `).join('');
-    document.getElementById('dlBtn').disabled = (queue.length === 0);
+    document.getElementById('dlBtn').disabled = false;
+    updatePreview();
 }
 
 function clearQueue() { queue = []; updateUI(); }
 
-// UPDATED DOWNLOAD FUNCTION
-function downloadJson() {
-    let filters = {};
-    
-    // Check our new toggle
-    const useAutoItems = document.getElementById('prefItems').checked;
-    const balls = useAutoItems ? [3] : [];      // 3 = Ultra Ball
-    const berries = useAutoItems ? [706] : [];  // 706 = Golden Razz
+function toggleDebug() {
+    const panel = document.getElementById('debugPanel');
+    const btn = document.getElementById('debugToggleBtn');
+    const opening = panel.style.display === 'none';
+    panel.style.display = opening ? 'block' : 'none';
+    btn.textContent = opening ? '🐛 Debug View: ON' : '🐛 Debug View: OFF';
+    btn.style.color = opening ? '#27ae60' : '#888';
+    btn.style.borderColor = opening ? '#27ae60' : '#444';
+    if (opening) updatePreview();
+}
 
+function buildFilters() {
+    const filters = {};
+    const useAutoItems = document.getElementById('prefItems').checked;
+    const balls   = useAutoItems ? [3]   : [];
+    const berries = useAutoItems ? [706] : [];
     queue.forEach(item => {
         const id = crypto.randomUUID();
-        const maxLvl = item.ivs[0].level;
-
         filters[id] = {
-            "catchOptionsBerries": berries,
-            "catchOptionsPokeballs": balls,
-            "cpMax": 0,
-            "cpMin": 0,
-            "enabled": true,
-            "encounterFilterId": id,
-            "encounterFilterName": `${item.name.toUpperCase()} ${item.label} (${item.league})`,
-            "filterCp": false,
-            "filterGreatLeagueTopRank": false,
-            "filterIvSum": false,
-            "filterLevel": true,
-            "filterOnlyCatch": item.shiny,
-            "filterPokemonId": true,
-            "filterShowcaseScore": false,
-            "filterSize": false,
-            "filterSpecificIv": true,
-            "filterType": false,
-            "filterUltraLeagueTopRank": false,
-            "ivSets": item.ivs.map(iv => ({ "ivAtk": iv.a, "ivDef": iv.d, "ivSta": iv.s })),
-            "ivSumMax": 0,
-            "ivSumMin": 0,
-            "levelMax": Math.ceil(maxLvl),
-            "levelMin": 1,
-            "minShowcaseScore": 0,
-            "onlyApplyPurificationBonus": false,
-            "onlyBackground": false,
-            "onlyShiny": item.shiny,
-            "pokemonDetailsCatchOriginDmax": false,
-            "pokemonId": item.ids, // This ensures the [ { pokedexId: 144, form: 716... } ] structure
-            "removePokemonIdFromListThreshold": 1,
-            "removePokemonIdFromListWhenCaught": true,
-            "sizeXl": false,
-            "sizeXs": false,
-            "sizeXxl": false,
-            "sizeXxs": false,
-            "targetTypes": []
+            catchOptionsBerries: berries,
+            catchOptionsPokeballs: balls,
+            cpMax: 0, cpMin: 0,
+            enabled: true,
+            encounterFilterId: id,
+            encounterFilterName: `${item.name.toUpperCase()} ${item.label} (${item.league})`,
+            filterCp: false, filterGreatLeagueTopRank: false, filterIvSum: false,
+            filterLevel: true, filterOnlyCatch: item.shiny, filterPokemonId: true,
+            filterShowcaseScore: false, filterSize: false, filterSpecificIv: true,
+            filterType: false, filterUltraLeagueTopRank: false,
+            ivSets: item.ivs.map(iv => ({ ivAtk: iv.a, ivDef: iv.d, ivSta: iv.s })),
+            ivSumMax: 0, ivSumMin: 0,
+            levelMax: Math.ceil(item.ivs[0].level), levelMin: 1,
+            minShowcaseScore: 0,
+            onlyApplyPurificationBonus: false, onlyBackground: false, onlyShiny: item.shiny,
+            pokemonDetailsCatchOriginDmax: false,
+            pokemonId: item.ids,
+            removePokemonIdFromListThreshold: 1, removePokemonIdFromListWhenCaught: true,
+            sizeXl: false, sizeXs: false, sizeXxl: false, sizeXxs: false,
+            targetTypes: []
         };
     });
+    return filters;
+}
 
-    const blob = new Blob([JSON.stringify({ "encounterFilters": filters }, null, 2)], { type: "application/json" });
+function updatePreview() {
+    if (document.getElementById('debugPanel').style.display === 'none') return;
+    document.getElementById('output').textContent = JSON.stringify({ encounterFilters: buildFilters() }, null, 2);
+}
+
+function downloadJson() {
+    const blob = new Blob([JSON.stringify({ encounterFilters: buildFilters() }, null, 2)], { type: "application/json" });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `PolygonX_PvP_Filters.json`;
+    a.download = 'PolygonX_PvP_Filters.json';
     a.click();
 }
+
 init();
 </script>
 </body>
