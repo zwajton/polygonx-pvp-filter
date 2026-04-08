@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PvP Filter Generator v42</title>
+    <title>PvP Filter Generator v45</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background: #121212; color: #eee; }
         .container { max-width: 950px; margin: auto; background: #1e1e1e; padding: 25px; border-radius: 12px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -23,13 +23,20 @@
         label { font-size: 13px; color: #bbb; cursor: pointer; }
         .guide { background: #1a1a1a; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #333; font-size: 13px; color: #ccc; line-height: 1.6; }
         .guide h3 { margin-top: 0; color: #2980b9; font-size: 16px; }
-        pre { background: #000; color: #00ff00; padding: 15px; border-radius: 8px; font-size: 11px; max-height: 150px; border: 1px solid #333; }
+        pre { background: #000; color: #00ff00; padding: 15px; border-radius: 8px; font-size: 11px; max-height: 300px; overflow-y: auto; border: 1px solid #333; }
+        .section-label { color: #3498db; font-weight: bold; font-size: 0.85em; display: block; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+        .toggle-group { display: flex; gap: 6px; flex-wrap: wrap; }
+        .btn-toggle { background: #2d2d2d; color: #888; border: 1px solid #444 !important; flex: none; padding: 8px 16px; font-size: 13px; border-radius: 6px; cursor: pointer; transition: 0.2s; font-weight: bold; }
+        .btn-toggle:hover { border-color: #666 !important; color: #ccc; }
+        .btn-toggle.active { background: #2980b9; color: white; border-color: #2980b9 !important; }
+        .btn-toggle.active-gold { background: #f39c12; color: #1a1a1a; border-color: #f39c12 !important; }
+        .divider { border: none; border-top: 1px solid #333; margin: 12px 0; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2 style="text-align: center; color: #2980b9; margin-bottom: 5px;">PvP Filter Generator v42</h2>
+    <h2 style="text-align: center; color: #2980b9; margin-bottom: 5px;">PvP Filter Generator v45</h2>
     <p style="text-align: center; color: #888; margin-bottom: 25px; font-size: 14px;">Optimized for PolygonX #Encounter-Filters</p>
 
     <div class="guide">
@@ -47,13 +54,13 @@
     
     <div id="status" style="text-align:center; font-weight:bold; margin-bottom:15px; color:#aaa;">Connecting to GameData...</div>
 
-<div class="options-row" style="background: #252525; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-bottom: 10px;">
+<div class="options-row" style="background: #252525; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-bottom: 10px; position: relative;">
     <label style="color: #3498db; font-weight: bold; font-size: 0.9em; display: block; margin-bottom: 5px;">
         Search for Pokémon here you want added:
     </label>
-    <input type="text" id="pkmInput" placeholder="e.g. Dondozo..." list="pkmList" 
-        style="width: 100%; box-sizing: border-box; padding: 10px; border-radius: 6px; border: 1px solid #444; background: #1a1a1a; color: white;">
-    <datalist id="pkmList"></datalist>
+    <input type="text" id="pkmInput" placeholder="e.g. Dondozo..." autocomplete="off"
+        style="width: 100%; box-sizing: border-box; padding: 10px; border-radius: 6px; border: 1px solid #444; background: #1a1a1a; color: white; margin: 0;">
+    <div id="pkmSuggestions" style="display:none; position:absolute; left:15px; right:15px; background:#1a1a1a; border:1px solid #444; border-radius:0 0 6px 6px; max-height:200px; overflow-y:auto; z-index:200; box-shadow:0 4px 12px rgba(0,0,0,0.5);"></div>
 </div>
 
 <div class="options-row" style="background: #252525; border-radius: 8px; border: 1px solid #333; margin-bottom: 10px; overflow: hidden;">
@@ -70,21 +77,47 @@
     </div>
 </div>
 
+    <!-- LEAGUE -->
     <div class="options-row">
-        <select id="league">
-            <option value="500">Little League (LL)</option>
-            <option value="1500" selected>Great League (GL)</option>
-            <option value="2500">Ultra League (UL)</option>
-        </select>
-        
-        <div class="options-row" style="display: flex; gap: 15px; flex-wrap: wrap; background: #252525; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-bottom: 10px;">
+        <span class="section-label">🏆 League</span>
+        <div class="toggle-group">
+            <button class="btn-toggle" id="leagueLL" onclick="setLeague(500,this)">LL (500)</button>
+            <button class="btn-toggle active" id="leagueGL" onclick="setLeague(1500,this)">GL (1500)</button>
+            <button class="btn-toggle" id="leagueUL" onclick="setLeague(2500,this)">UL (2500)</button>
+        </div>
+    </div>
+
+    <!-- ITEMS -->
+    <div class="options-row">
+        <span class="section-label">🎒 Poké Ball</span>
+        <div class="toggle-group">
+            <button class="btn-toggle" id="ball1" onclick="setBall(1,this)">🔴 Poké Ball</button>
+            <button class="btn-toggle" id="ball2" onclick="setBall(2,this)">🔵 Great Ball</button>
+            <button class="btn-toggle active" id="ball3" onclick="setBall(3,this)">⚫ Ultra Ball</button>
+        </div>
+        <hr class="divider">
+        <span class="section-label">🍓 Berry</span>
+        <div class="toggle-group">
+            <button class="btn-toggle" id="berryNone" onclick="setBerry(0,this)">None</button>
+            <button class="btn-toggle" id="berry703" onclick="setBerry(703,this)">Razz</button>
+            <button class="btn-toggle" id="berry704" onclick="setBerry(704,this)">Nanab</button>
+            <button class="btn-toggle" id="berry705" onclick="setBerry(705,this)">Pinap</button>
+            <button class="btn-toggle active active-gold" id="berry706" onclick="setBerry(706,this)">⭐ Gold Razz</button>
+            <button class="btn-toggle" id="berry707" onclick="setBerry(707,this)">Silver Pinap</button>
+        </div>
+    </div>
+
+    <!-- OPTIONS -->
+    <div class="options-row">
+        <span class="section-label">⚙️ Options</span>
+        <div style="display:flex; gap:15px; flex-wrap:wrap;">
             <label><input type="checkbox" id="isShiny"> Shiny Only</label>
             <label><input type="checkbox" id="addEvolutions"> Include Family</label>
-            <label title="Auto-assign Ultra Ball + Golden Razz">
-                <input type="checkbox" id="prefItems" checked> Auto-Item (Ultra/Gold)
-            </label>
         </div>
+    </div>
 
+    <div class="options-row">
+        <span class="section-label">➕ Add to Queue</span>
         <div class="flex">
             <button class="btn-blue" onclick="addRanks(1)">Rank 1</button>
             <button class="btn-blue" onclick="addRanks(5)">Ranks 1-5</button>
@@ -105,13 +138,12 @@
     </div>
 
     <div class="flex">
-        <button class="btn-green" id="dlBtn" onclick="downloadJson()" disabled>Download .json</button>
+        <button class="btn-green" id="dlBtn" onclick="downloadJson()" disabled>⬇ Download .json</button>
         <button class="btn-clear" onclick="clearQueue()">Clear All</button>
     </div>
 
-    <!-- Debug preview toggle -->
     <div style="margin-top:12px; text-align:right;">
-        <button id="debugToggleBtn" onclick="toggleDebug()" style="flex:none; padding:6px 14px; font-size:12px; background:#2d2d2d; color:#888; border:1px solid #444; border-radius:6px; cursor:pointer;">🐛 Debug View: OFF</button>
+        <button id="debugToggleBtn" onclick="toggleDebug()" style="flex:none; padding:6px 14px; font-size:12px; background:#2d2d2d; color:#888; border:1px solid #444; border-radius:6px; cursor:pointer; font-weight:bold;">🐛 Debug View: OFF</button>
     </div>
     <div id="debugPanel" style="display:none; margin-top:8px;">
         <pre id="output">// Add Pokémon to see JSON preview...</pre>
@@ -124,41 +156,93 @@ const CPM = {1:0.094,1.5:0.13513743,2:0.16639787,2.5:0.19265092,3:0.21573247,3.5
 let masterFileData = null; // Declare this globally so getBaseIds can see it
 let pokemonData = [];
 let queue = [];
+let selectedLeague = 1500;
+let selectedBall = 3;
+let selectedBerry = 706;
+
+function setLeague(val, btn) {
+    selectedLeague = val;
+    document.querySelectorAll('#leagueLL,#leagueGL,#leagueUL').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+function setBall(val, btn) {
+    selectedBall = val;
+    document.querySelectorAll('#ball1,#ball2,#ball3').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+function setBerry(val, btn) {
+    selectedBerry = val;
+    document.querySelectorAll('#berryNone,#berry703,#berry704,#berry705,#berry706,#berry707').forEach(b => {
+        b.classList.remove('active');
+        b.classList.remove('active-gold');
+    });
+    if (val === 706) btn.classList.add('active-gold');
+    btn.classList.add('active');
+}
+function toggleDebug() {
+    const panel = document.getElementById('debugPanel');
+    const btn = document.getElementById('debugToggleBtn');
+    const opening = panel.style.display === 'none';
+    panel.style.display = opening ? 'block' : 'none';
+    btn.textContent = opening ? '🐛 Debug View: ON' : '🐛 Debug View: OFF';
+    btn.style.color = opening ? '#27ae60' : '#888';
+    btn.style.borderColor = opening ? '#27ae60' : '#444';
+    if (opening) updatePreview();
+}
+function updatePreview() {
+    if (document.getElementById('debugPanel').style.display === 'none') return;
+    document.getElementById('output').textContent = JSON.stringify({ encounterFilters: buildFilters() }, null, 2);
+}
 
 async function init() {
     try {
         document.getElementById('status').innerText = "FETCHING MASTERFILES...";
-        
-        // Fetch both PvPoke and the WatWowMap Masterfile at the same time
         const [pvpokeRes, masterRes] = await Promise.all([
             fetch('https://raw.githubusercontent.com/pvpoke/pvpoke/master/src/data/gamemaster.json'),
             fetch('https://raw.githubusercontent.com/WatWowMap/Masterfile-Generator/refs/heads/master/master-latest-raw.json')
         ]);
-
         const pvpokeData = await pvpokeRes.json();
-        masterFileData = await masterRes.json(); // Stored globally for form mapping
+        masterFileData = await masterRes.json();
         pokemonData = pvpokeData.pokemon;
-
-        const list = document.getElementById('pkmList');
-        list.innerHTML = ""; // Clear list before adding
-
-        pokemonData.forEach(p => {
-            // Filter out shadows/megas from the search list to keep it clean, 
-            // but keep the base species
-            if (!p.speciesId.includes("_shadow") && !p.speciesId.includes("_mega")) {
-                let opt = document.createElement('option');
-                opt.value = p.speciesName;
-                list.appendChild(opt);
-            }
-        });
-
+        initAutocomplete();
         document.getElementById('status').innerText = "SYSTEM ARMED ✔️";
         document.getElementById('specialBtn').disabled = false;
-        
     } catch (e) {
         console.error(e);
         document.getElementById('status').innerText = "CONNECTION ERROR!";
     }
+}
+
+function initAutocomplete() {
+    const input = document.getElementById('pkmInput');
+    const box = document.getElementById('pkmSuggestions');
+
+    input.addEventListener('input', () => {
+        const val = input.value.toLowerCase().trim();
+        box.innerHTML = '';
+        if (val.length < 2) { box.style.display = 'none'; return; }
+        const matches = pokemonData
+            .filter(p => !p.speciesId.includes('_shadow') && !p.speciesId.includes('_mega') && p.speciesName.toLowerCase().includes(val))
+            .slice(0, 25);
+        if (!matches.length) { box.style.display = 'none'; return; }
+        matches.forEach(p => {
+            const div = document.createElement('div');
+            div.textContent = p.speciesName;
+            div.style.cssText = 'padding:8px 12px; cursor:pointer; border-bottom:1px solid #2a2a2a; color:#eee;';
+            div.addEventListener('mouseover', () => div.style.background = '#2d2d2d');
+            div.addEventListener('mouseout',  () => div.style.background = '');
+            div.addEventListener('mousedown', e => {
+                e.preventDefault();
+                input.value = p.speciesName;
+                box.style.display = 'none';
+            });
+            box.appendChild(div);
+        });
+        box.style.display = 'block';
+    });
+    document.addEventListener('click', e => {
+        if (!box.contains(e.target) && e.target !== input) box.style.display = 'none';
+    });
 }
 
 // Helper to get selected berries/balls
@@ -173,8 +257,8 @@ function processBulk() {
     
     const names = input.split(',').map(n => n.trim());
     let addedCount = 0;
-    const league = parseInt(document.getElementById('league').value);
-    const code = (league === 500) ? "LL" : (league === 1500) ? "GL" : "UL";
+    const league = selectedLeague;
+    const code = league === 500 ? "LL" : league === 1500 ? "GL" : "UL";
     const shiny = document.getElementById('isShiny').checked;
 
     names.forEach(name => {
@@ -257,12 +341,20 @@ function resolveFormId(dexId, fullName) {
         if (extracted === "paldean") protoSuffix = "paldea";
 
         if (masterPkm.forms) {
+            // Exact formName match first — prevents e.g. "pompom" substring-matching "baile"
             for (const [fId, fData] of Object.entries(masterPkm.forms)) {
-                const proto = fData.proto ? fData.proto.toLowerCase() : "";
-                const formName = fData.formName ? fData.formName.toLowerCase() : "";
-                if (proto.includes(normalized) || formName.includes(normalized)) {
-                    detectedForm = parseInt(fId);
-                    break;
+                if ((fData.formName || "").toLowerCase() === normalized) {
+                    detectedForm = parseInt(fId); break;
+                }
+            }
+            // Substring fallback if exact match found nothing
+            if (detectedForm === (masterPkm.defaultFormId || 0)) {
+                for (const [fId, fData] of Object.entries(masterPkm.forms)) {
+                    const proto = fData.proto ? fData.proto.toLowerCase() : "";
+                    const formName = fData.formName ? fData.formName.toLowerCase() : "";
+                    if (proto.includes(normalized) || formName.includes(normalized)) {
+                        detectedForm = parseInt(fId); break;
+                    }
                 }
             }
         }
@@ -346,103 +438,27 @@ function calculateAllSpreads(pkm, limit) {
                 let cpm = CPM[bestLvl];
                 let realAtk = (bAtk + a) * cpm;
                 let prod = realAtk * ((bDef + d) * cpm) * Math.floor((bSta + s) * cpm);
-                spreads.push({ a, d, s, prod, realAtk, level: bestLvl }); // Added level here
+                let cp = Math.floor((bAtk+a) * Math.sqrt(bDef+d) * Math.sqrt(bSta+s) * Math.pow(cpm,2) / 10);
+                spreads.push({ a, d, s, prod, realAtk, level: bestLvl, cp });
             }
         }
     }
-    return spreads.sort((x, y) => y.prod - x.prod);
+    // Sort by stat product desc, tie-break by CP desc
+    return spreads.sort((x, y) => y.prod !== x.prod ? y.prod - x.prod : y.cp - x.cp);
 }
 
 function addRanks(count) {
     const pkm = pokemonData.find(x => x.speciesName === document.getElementById('pkmInput').value);
     if (!pkm) return alert("Select Pokemon!");
-    const league = parseInt(document.getElementById('league').value);
-    const all = calculateAllSpreads(pkm, league);
+    const all = calculateAllSpreads(pkm, selectedLeague);
     const ids = getBaseIds(pkm);
     const shiny = document.getElementById('isShiny').checked;
-    
     const rank1 = all[0];
-    // FIXED: Now correctly displays Rank 1 IVs in the UI list
     const ivDisplay = count === 1 ? `${rank1.a}/${rank1.d}/${rank1.s}` : `Rank 1-${count} Set`;
     const label = count === 1 ? "Rank 1" : `Rank 1-${count}`;
-    const code = (league === 500) ? "LL" : (league === 1500) ? "GL" : "UL";
-
-    queue.push({ 
-        name: pkm.speciesName, 
-        label: label, 
-        ivText: ivDisplay, 
-        atk: rank1.realAtk.toFixed(1), 
-        league: code, 
-        ids: ids, 
-        ivs: all.slice(0, count), 
-        shiny: shiny, 
-        class: "" 
-    });
+    const code = selectedLeague === 500 ? "LL" : selectedLeague === 1500 ? "GL" : "UL";
+    queue.push({ name: pkm.speciesName, label, ivText: ivDisplay, atk: rank1.realAtk.toFixed(1), league: code, ids, ivs: all.slice(0, count), shiny, class: "" });
     updateUI();
-}
-
-function addGenerateAll() {
-    const pkm = pokemonData.find(x => x.speciesName === document.getElementById('pkmInput').value);
-    if (!pkm) return alert("Select a Pokémon first!");
-    const shiny = document.getElementById('isShiny').checked;
-    [[500,"LL"],[1500,"GL"],[2500,"UL"]].forEach(([league, code]) => {
-        const all = calculateAllSpreads(pkm, league);
-        const ids = getBaseIds(pkm);
-        queue.push({ name: pkm.speciesName, label: "Rank 1", ivText: `${all[0].a}/${all[0].d}/${all[0].s}`, atk: all[0].realAtk.toFixed(1), league: code, ids, ivs: [all[0]], shiny, class: "" });
-    });
-    updateUI();
-}
-
-function toggleDebug() {
-    const panel = document.getElementById('debugPanel');
-    const btn = document.getElementById('debugToggleBtn');
-    const isHidden = panel.style.display === 'none';
-    panel.style.display = isHidden ? 'block' : 'none';
-    btn.textContent = isHidden ? '🐛 Debug View: ON' : '🐛 Debug View: OFF';
-    btn.style.color = isHidden ? '#27ae60' : '#888';
-    btn.style.borderColor = isHidden ? '#27ae60' : '#444';
-    if (isHidden) updatePreview();
-}
-
-function updatePreview() {
-    const panel = document.getElementById('debugPanel');
-    if (panel.style.display === 'none') return; // only update when visible
-    document.getElementById('output').textContent = JSON.stringify({ encounterFilters: buildFilters() }, null, 2);
-}
-
-function buildFilters() {
-    let filters = {};
-    const useAutoItems = document.getElementById('prefItems').checked;
-    const balls = useAutoItems ? [3] : [];
-    const berries = useAutoItems ? [706] : [];
-
-    queue.forEach(item => {
-        const id = crypto.randomUUID();
-        const maxLvl = item.ivs[0].level;
-        filters[id] = {
-            catchOptionsBerries: berries,
-            catchOptionsPokeballs: balls,
-            cpMax: 0, cpMin: 0,
-            enabled: true,
-            encounterFilterId: id,
-            encounterFilterName: `${item.name.toUpperCase()} ${item.label} (${item.league})`,
-            filterCp: false, filterGreatLeagueTopRank: false, filterIvSum: false,
-            filterLevel: true, filterOnlyCatch: item.shiny, filterPokemonId: true,
-            filterShowcaseScore: false, filterSize: false, filterSpecificIv: true,
-            filterType: false, filterUltraLeagueTopRank: false,
-            ivSets: item.ivs.map(iv => ({ ivAtk: iv.a, ivDef: iv.d, ivSta: iv.s })),
-            ivSumMax: 0, ivSumMin: 0,
-            levelMax: Math.ceil(maxLvl), levelMin: 1,
-            minShowcaseScore: 0,
-            onlyApplyPurificationBonus: false, onlyBackground: false, onlyShiny: item.shiny,
-            pokemonDetailsCatchOriginDmax: false,
-            pokemonId: item.ids,
-            removePokemonIdFromListThreshold: 1, removePokemonIdFromListWhenCaught: true,
-            sizeXl: false, sizeXs: false, sizeXxl: false, sizeXxs: false,
-            targetTypes: []
-        };
-    });
-    return filters;
 }
 
 function addCustomRanks() {
@@ -454,11 +470,10 @@ function addCustomRanks() {
 function addArchetypes() {
     const pkm = pokemonData.find(x => x.speciesName === document.getElementById('pkmInput').value);
     if (!pkm) return alert("Select Pokemon!");
-    const league = parseInt(document.getElementById('league').value);
-    const all = calculateAllSpreads(pkm, league);
+    const all = calculateAllSpreads(pkm, selectedLeague);
     const ids = getBaseIds(pkm);
     const shiny = document.getElementById('isShiny').checked;
-    const lc = league == 1500 ? "GL" : league == 2500 ? "UL" : "LL";
+    const lc = selectedLeague === 500 ? "LL" : selectedLeague === 1500 ? "GL" : "UL";
     const bulk = all[0];
     const highestAtk = [...all].sort((a,b) => b.realAtk - a.realAtk)[0];
     const mid     = all.filter(x => x.realAtk >= (bulk.realAtk * 1.05) && x.prod >= (bulk.prod * 0.90) && x.s >= 5).sort((a,b) => b.prod - a.prod)[0] || highestAtk;
@@ -475,8 +490,7 @@ function addGenerateAll() {
     const shiny = document.getElementById('isShiny').checked;
     [[500,"LL"],[1500,"GL"],[2500,"UL"]].forEach(([league, code]) => {
         const all = calculateAllSpreads(pkm, league);
-        const ids = getBaseIds(pkm);
-        queue.push({ name: pkm.speciesName, label: "Rank 1", ivText: `${all[0].a}/${all[0].d}/${all[0].s}`, atk: all[0].realAtk.toFixed(1), league: code, ids, ivs: [all[0]], shiny, class: "" });
+        queue.push({ name: pkm.speciesName, label: "Rank 1", ivText: `${all[0].a}/${all[0].d}/${all[0].s}`, atk: all[0].realAtk.toFixed(1), league: code, ids: getBaseIds(pkm), ivs: [all[0]], shiny, class: "" });
     });
     updateUI();
 }
@@ -503,22 +517,10 @@ function updateUI() {
 
 function clearQueue() { queue = []; updateUI(); }
 
-function toggleDebug() {
-    const panel = document.getElementById('debugPanel');
-    const btn = document.getElementById('debugToggleBtn');
-    const opening = panel.style.display === 'none';
-    panel.style.display = opening ? 'block' : 'none';
-    btn.textContent = opening ? '🐛 Debug View: ON' : '🐛 Debug View: OFF';
-    btn.style.color = opening ? '#27ae60' : '#888';
-    btn.style.borderColor = opening ? '#27ae60' : '#444';
-    if (opening) updatePreview();
-}
-
 function buildFilters() {
     const filters = {};
-    const useAutoItems = document.getElementById('prefItems').checked;
-    const balls   = useAutoItems ? [3]   : [];
-    const berries = useAutoItems ? [706] : [];
+    const balls   = selectedBall   > 0 ? [selectedBall]   : [];
+    const berries = selectedBerry  > 0 ? [selectedBerry]  : [];
     queue.forEach(item => {
         const id = crypto.randomUUID();
         filters[id] = {
@@ -547,11 +549,7 @@ function buildFilters() {
     return filters;
 }
 
-function updatePreview() {
-    if (document.getElementById('debugPanel').style.display === 'none') return;
-    document.getElementById('output').textContent = JSON.stringify({ encounterFilters: buildFilters() }, null, 2);
-}
-
+// UPDATED DOWNLOAD FUNCTION
 function downloadJson() {
     const blob = new Blob([JSON.stringify({ encounterFilters: buildFilters() }, null, 2)], { type: "application/json" });
     const a = document.createElement('a');
@@ -559,7 +557,6 @@ function downloadJson() {
     a.download = 'PolygonX_PvP_Filters.json';
     a.click();
 }
-
 init();
 </script>
 </body>
